@@ -27,12 +27,12 @@ Supported formats: json and html.
 @author  Jacek Becla, SLAC
 
 """
-
-import json
 import logging as log
 from http.client import OK, INTERNAL_SERVER_ERROR
 
 from flask import Blueprint, request, current_app, make_response, render_template
+from flask import jsonify
+
 from sqlalchemy import create_engine, text, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError, InterfaceError
@@ -40,24 +40,35 @@ from sqlalchemy.exc import SQLAlchemyError, InterfaceError
 from lsst.dax.dbserv.compat.fields import MySQLFieldHelper
 from lsst.dax.webservcommon import render_response
 
-dbREST = Blueprint('dbREST', __name__, template_folder='templates')
+ACCEPT_TYPES = ['application/json', 'text/html']
+
+db_api_v0 = Blueprint('api_db_v0', __name__, static_folder='static',
+                      template_folder='templates')
 
 
-@dbREST.route('/', methods=['GET'])
-def root():
-    fmt = request.accept_mimetypes.best_match(['application/json', 'text/html'])
-    if fmt == 'text/html':
-        return "LSST TAP Service v0 here. I currently support: " \
-               "<a href='query'>/sync</a>."
-    return "LSST Database Service v0 here. I currently support: /sync."
+@db_api_v0.route('/')
+def index():
+    fmt = request.accept_mimetypes.best_match(ACCEPT_TYPES)
+    if fmt == "text/html":
+        return make_response(render_template("api_db_v0.html"))
+    else:
+        return jsonify({"Links": "/tap/sync"})
 
 
-@dbREST.route('/sync', methods=['POST'])
+@db_api_v0.route('/tap/')
+def tap():
+    fmt = request.accept_mimetypes.best_match(ACCEPT_TYPES)
+    if fmt == "text/html":
+        return  "<a href='sync'>sync</a>"
+    else:
+        return jsonify({"Links": "/sync"})
+
+
+@db_api_v0.route('/tap/sync/', methods=['GET', 'POST'])
 def sync_query():
     """Synchronously run a query.
     :return: A proper response object
     """
-
     query = request.args.get("query", request.form.get("query", None))
     if query:
         log.debug(query)
@@ -95,7 +106,7 @@ def sync_query():
             status_code = INTERNAL_SERVER_ERROR
         return _response(response, status_code)
     else:
-        return "Listing queries is not implemented."
+        return jsonify({"Info": "Listing queries is not implemented"})
 
 
 @event.listens_for(Engine, "handle_error")
@@ -152,5 +163,5 @@ def _response(response, status_code):
                                    result=response["result"],
                                    mappings=votable_mappings)
     else:
-        response = json.dumps(response)
+        response = jsonify(response)
     return make_response(response, status_code)
