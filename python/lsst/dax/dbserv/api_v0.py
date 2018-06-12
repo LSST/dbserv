@@ -132,7 +132,8 @@ def _get_engine():
         db_url = current_app.config.get("dax.dbserv.db.url", None)
         if db_url:
             pool_size = current_app.config.get("dax.dbserv.db.pool_size", 10)
-            db_engine = create_engine(db_url, pool_size=pool_size)
+            db_engine = create_engine(db_url, pool_size=pool_size,
+                    pool_pre_ping=True)
         else:
             db_engine = current_app.config["default_engine"]
         current_app.config["dax.dbserv.db.engine"] = db_engine
