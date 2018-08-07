@@ -1,7 +1,7 @@
 import json
 import unittest
 from flask import Flask
-from lsst.dax.dbserv import dbREST_v0
+from lsst.dax.dbserv import api_v0
 from unittest.mock import MagicMock
 
 import MySQLdb
@@ -39,7 +39,7 @@ class TestMySqlQuery(unittest.TestCase):
         self.client = self.app.test_client()
         self.mock_engine = MagicMock()
         self.app.config['default_engine'] = self.mock_engine
-        self.app.register_blueprint(dbREST_v0.dbREST, url_prefix='/tap')
+        self.app.register_blueprint(api_v0.db_api_v0, url_prefix='/test')
 
         def side_effect(arg):
             arg = str(arg)   # This is actually a sqlalchemy.text object, convert to string
@@ -48,26 +48,25 @@ class TestMySqlQuery(unittest.TestCase):
         self.mock_engine.execute.side_effect = side_effect
 
     def test_basic_queries_json(self):
-
         for query, results in self.queries.items():
-            resp = self.client.post("/tap/sync?query=" + query)
-            self.assertEqual(json.loads(resp.data)["results"]["table"]["data"], results)
+            resp = self.client.post("/test/tap/sync?query=" + query)
+            self.assertEqual(json.loads(resp.data)["result"]["table"]["data"], results)
 
     def test_basic_queries_html(self):
 
         for query, results in self.queries.items():
-            resp = self.client.post("/tap/sync?query=" + query, headers={"accept": "text/html"})
+            resp = self.client.post("/test/tap/sync?query=" + query, headers={"accept": "text/html"})
             print(resp)
             expected_row = "<td>" + "</td><td>".join([str(i) for i in results[0]]) + "</td>"
-            self.assertIn(expected_row, resp.data)
+            self.assertIn(expected_row.encode(), resp.data)
 
     def test_basic_queries_votable(self):
-
+        # import pdb; pdb.set_trace()
         for query, results in self.queries.items():
-            resp = self.client.post("/tap/sync?query=" + query, headers={"accept": "application/x-votable+xml"})
+            resp = self.client.post("/test/tap/sync?query=" + query, headers={"accept": "application/x-votable+xml"})
             print(resp.data)
             expected_row = "<TD>" + "</TD><TD>".join([str(i) for i in results[0]]) + "</TD>"
-            self.assertIn(expected_row, resp.data)
+            self.assertIn(expected_row.encode(), resp.data)
 
 if __name__ == '__main__':
     unittest.main()

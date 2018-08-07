@@ -55,7 +55,7 @@ def index():
         return jsonify({"Links": "/tap/sync"})
 
 
-@db_api_v0.route('/tap/')
+@db_api_v0.route('/tap')
 def tap():
     fmt = request.accept_mimetypes.best_match(ACCEPT_TYPES)
     if fmt == "text/html":
@@ -64,7 +64,7 @@ def tap():
         return jsonify({"Links": "/sync"})
 
 
-@db_api_v0.route('/tap/sync/', methods=['GET', 'POST'])
+@db_api_v0.route('/tap/sync', methods=['GET', 'POST'])
 def sync_query():
     """Synchronously run a query.
     :return: A proper response object
