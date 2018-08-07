@@ -2,7 +2,7 @@ import json
 import unittest
 from flask import Flask
 from lsst.dax.dbserv import dbREST_v0
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 import MySQLdb
 
