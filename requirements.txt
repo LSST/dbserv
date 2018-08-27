@@ -1,0 +1,5 @@
+flask
+mysqlclient
+setuptools_scm
+pytest
+pytest-runner
